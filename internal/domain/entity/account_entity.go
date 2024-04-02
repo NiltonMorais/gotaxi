@@ -18,8 +18,14 @@ type AccountEntity struct {
 }
 
 func NewAccountEntity(name, email, document, carPlate string, isPassenger, isDriver bool) (*AccountEntity, error) {
-	if !regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`).MatchString(email) {
+	if isInvalidEmail(email) {
 		return nil, errors.New("invalid email")
+	}
+	if isInvalidName(name) {
+		return nil, errors.New("invalid name")
+	}
+	if isDriver && isInvalidCarPlate(carPlate) {
+		return nil, errors.New("invalid car plate")
 	}
 	uuid, err := uuid.NewRandom()
 	if err != nil {
@@ -34,6 +40,18 @@ func NewAccountEntity(name, email, document, carPlate string, isPassenger, isDri
 		isPassenger: isPassenger,
 		isDriver:    isDriver,
 	}, nil
+}
+
+func RestoreAccountEntity(id, name, email, document, carPlate string, isPassenger, isDriver bool) *AccountEntity {
+	return &AccountEntity{
+		id:          id,
+		name:        name,
+		email:       email,
+		document:    document,
+		carPlate:    carPlate,
+		isPassenger: isPassenger,
+		isDriver:    isDriver,
+	}
 }
 
 func (a *AccountEntity) GetID() string {
@@ -62,4 +80,16 @@ func (a *AccountEntity) IsPassenger() bool {
 
 func (a *AccountEntity) IsDriver() bool {
 	return a.isDriver
+}
+
+func isInvalidEmail(email string) bool {
+	return !regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`).MatchString(email)
+}
+
+func isInvalidName(name string) bool {
+	return !regexp.MustCompile(`[a-zA-Z] [a-zA-Z]+`).MatchString(name)
+}
+
+func isInvalidCarPlate(carPlate string) bool {
+	return !regexp.MustCompile(`[A-Z]{3}[0-9]{4}`).MatchString(carPlate)
 }

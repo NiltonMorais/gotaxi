@@ -1,9 +1,16 @@
 package entity
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+const (
+	RideStatusRequested = "requested"
+	RideStatusAccepted  = "accepted"
+	RideStatusStarted   = "started"
 )
 
 type RideEntity struct {
@@ -32,7 +39,7 @@ func NewRideEntity(passengerID string, fromLat, fromLng, toLat, toLng float64) (
 		fromLng:     fromLng,
 		toLat:       toLat,
 		toLng:       toLng,
-		status:      "requested",
+		status:      RideStatusRequested,
 		date:        time.Now(),
 	}, nil
 }
@@ -49,6 +56,23 @@ func RestoreRideEntity(id, passengerID, driverID string, fromLat, fromLng, toLat
 		status:      status,
 		date:        date,
 	}
+}
+
+func (r *RideEntity) Accept(driverID string) error {
+	if r.status != RideStatusRequested {
+		return errors.New("ride is not requested")
+	}
+	r.driverID = driverID
+	r.status = RideStatusAccepted
+	return nil
+}
+
+func (r *RideEntity) Start() error {
+	if r.status != RideStatusAccepted {
+		return errors.New("ride is not accepted")
+	}
+	r.status = RideStatusStarted
+	return nil
 }
 
 func (r *RideEntity) GetID() string {
@@ -85,8 +109,4 @@ func (r *RideEntity) GetStatus() string {
 
 func (r *RideEntity) GetDate() time.Time {
 	return r.date
-}
-
-func (r *RideEntity) SetDriverID(driverID string) {
-	r.driverID = driverID
 }

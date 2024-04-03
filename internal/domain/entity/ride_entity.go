@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/NiltonMorais/gotaxi/internal/domain/vo"
 	"github.com/google/uuid"
 )
 
@@ -14,15 +15,13 @@ const (
 )
 
 type RideEntity struct {
-	id          string
-	passengerID string
-	driverID    string
-	fromLat     float64
-	fromLng     float64
-	toLat       float64
-	toLng       float64
-	status      string
-	date        time.Time
+	id           string
+	passengerID  string
+	driverID     string
+	fromLocation *vo.LocationVo
+	toLocation   *vo.LocationVo
+	status       string
+	date         time.Time
 }
 
 func NewRideEntity(passengerID string, fromLat, fromLng, toLat, toLng float64) (*RideEntity, error) {
@@ -31,31 +30,29 @@ func NewRideEntity(passengerID string, fromLat, fromLng, toLat, toLng float64) (
 		return nil, err
 	}
 
-	return &RideEntity{
-		id:          uuid.String(),
-		passengerID: passengerID,
-		driverID:    "",
-		fromLat:     fromLat,
-		fromLng:     fromLng,
-		toLat:       toLat,
-		toLng:       toLng,
-		status:      RideStatusRequested,
-		date:        time.Now(),
-	}, nil
+	return RestoreRideEntity(uuid.String(), passengerID, "", fromLat, fromLng, toLat, toLng, RideStatusRequested, time.Now())
 }
 
-func RestoreRideEntity(id, passengerID, driverID string, fromLat, fromLng, toLat, toLng float64, status string, date time.Time) *RideEntity {
-	return &RideEntity{
-		id:          id,
-		passengerID: passengerID,
-		driverID:    driverID,
-		fromLat:     fromLat,
-		fromLng:     fromLng,
-		toLat:       toLat,
-		toLng:       toLng,
-		status:      status,
-		date:        date,
+func RestoreRideEntity(id, passengerID, driverID string, fromLat, fromLng, toLat, toLng float64, status string, date time.Time) (*RideEntity, error) {
+	fromLocation, err := vo.NewLocation(fromLat, fromLng)
+	if err != nil {
+		return nil, err
 	}
+
+	toLocation, err := vo.NewLocation(toLat, toLng)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RideEntity{
+		id:           id,
+		passengerID:  passengerID,
+		driverID:     driverID,
+		fromLocation: fromLocation,
+		toLocation:   toLocation,
+		status:       status,
+		date:         date,
+	}, nil
 }
 
 func (r *RideEntity) Accept(driverID string) error {
@@ -88,19 +85,19 @@ func (r *RideEntity) GetDriverID() string {
 }
 
 func (r *RideEntity) GetFromLat() float64 {
-	return r.fromLat
+	return r.fromLocation.Latitude()
 }
 
 func (r *RideEntity) GetFromLng() float64 {
-	return r.fromLng
+	return r.fromLocation.Longitude()
 }
 
 func (r *RideEntity) GetToLat() float64 {
-	return r.toLat
+	return r.toLocation.Latitude()
 }
 
 func (r *RideEntity) GetToLng() float64 {
-	return r.toLng
+	return r.toLocation.Longitude()
 }
 
 func (r *RideEntity) GetStatus() string {

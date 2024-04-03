@@ -1,57 +1,61 @@
 package entity
 
 import (
-	"errors"
-	"regexp"
-
+	"github.com/NiltonMorais/gotaxi/internal/domain/vo"
 	"github.com/google/uuid"
 )
 
 type AccountEntity struct {
 	id          string
-	name        string
-	email       string
-	document    string
-	carPlate    string
+	name        *vo.NameVo
+	email       *vo.EmailVo
+	document    *vo.DocumentVo
+	carPlate    *vo.PlateVo
 	isPassenger bool
 	isDriver    bool
 }
 
 func NewAccountEntity(name, email, document, carPlate string, isPassenger, isDriver bool) (*AccountEntity, error) {
-	if isInvalidEmail(email) {
-		return nil, errors.New("invalid email")
-	}
-	if isInvalidName(name) {
-		return nil, errors.New("invalid name")
-	}
-	if isDriver && isInvalidCarPlate(carPlate) {
-		return nil, errors.New("invalid car plate")
-	}
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}
+	return RestoreAccountEntity(uuid.String(), name, email, document, carPlate, isPassenger, isDriver)
+}
+
+func RestoreAccountEntity(id, name, email, document, carPlate string, isPassenger, isDriver bool) (*AccountEntity, error) {
+	nameVo, err := vo.NewName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	emailVo, err := vo.NewEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	documentVo, err := vo.NewDocument(document)
+	if err != nil {
+		return nil, err
+	}
+
+	var carPlateVo *vo.PlateVo
+	if isDriver {
+		carPlateVo, err = vo.NewPlate(carPlate)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &AccountEntity{
-		id:          uuid.String(),
-		name:        name,
-		email:       email,
-		document:    document,
-		carPlate:    carPlate,
+		id:          id,
+		name:        nameVo,
+		email:       emailVo,
+		document:    documentVo,
+		carPlate:    carPlateVo,
 		isPassenger: isPassenger,
 		isDriver:    isDriver,
 	}, nil
-}
-
-func RestoreAccountEntity(id, name, email, document, carPlate string, isPassenger, isDriver bool) *AccountEntity {
-	return &AccountEntity{
-		id:          id,
-		name:        name,
-		email:       email,
-		document:    document,
-		carPlate:    carPlate,
-		isPassenger: isPassenger,
-		isDriver:    isDriver,
-	}
 }
 
 func (a *AccountEntity) GetID() string {
@@ -59,19 +63,19 @@ func (a *AccountEntity) GetID() string {
 }
 
 func (a *AccountEntity) GetName() string {
-	return a.name
+	return a.name.Value()
 }
 
 func (a *AccountEntity) GetEmail() string {
-	return a.email
+	return a.email.Value()
 }
 
 func (a *AccountEntity) GetDocument() string {
-	return a.document
+	return a.document.Value()
 }
 
 func (a *AccountEntity) GetCarPlate() string {
-	return a.carPlate
+	return a.carPlate.Value()
 }
 
 func (a *AccountEntity) IsPassenger() bool {
@@ -80,16 +84,4 @@ func (a *AccountEntity) IsPassenger() bool {
 
 func (a *AccountEntity) IsDriver() bool {
 	return a.isDriver
-}
-
-func isInvalidEmail(email string) bool {
-	return !regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`).MatchString(email)
-}
-
-func isInvalidName(name string) bool {
-	return !regexp.MustCompile(`[a-zA-Z] [a-zA-Z]+`).MatchString(name)
-}
-
-func isInvalidCarPlate(carPlate string) bool {
-	return !regexp.MustCompile(`[A-Z]{3}[0-9]{4}`).MatchString(carPlate)
 }

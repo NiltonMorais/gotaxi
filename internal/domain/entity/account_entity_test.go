@@ -66,7 +66,7 @@ func TestNewAccountEntity_InvalidCarPlate(t *testing.T) {
 		if err == nil {
 			t.Error("NewAccountEntity() error = nil; want an error")
 		}
-		if err.Error() != "invalid plate" {
+		if err.Error() != "invalid car plate" {
 			t.Errorf("NewAccountEntity() error = %v; want invalid car plate", err)
 		}
 	})

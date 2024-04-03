@@ -10,7 +10,7 @@ type AccountEntity struct {
 	name        *vo.NameVo
 	email       *vo.EmailVo
 	document    *vo.DocumentVo
-	carPlate    *vo.PlateVo
+	carPlate    *vo.CarPlateVo
 	isPassenger bool
 	isDriver    bool
 }
@@ -39,9 +39,9 @@ func RestoreAccountEntity(id, name, email, document, carPlate string, isPassenge
 		return nil, err
 	}
 
-	var carPlateVo *vo.PlateVo
+	var carPlateVo *vo.CarPlateVo
 	if isDriver {
-		carPlateVo, err = vo.NewPlate(carPlate)
+		carPlateVo, err = vo.NewCarPlate(carPlate)
 		if err != nil {
 			return nil, err
 		}

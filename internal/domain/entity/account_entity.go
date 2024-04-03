@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github.com/NiltonMorais/gotaxi/internal/domain/vo"
+	"github.com/NiltonMorais/gotaxi/internal/domain/entity/vo"
 	"github.com/google/uuid"
 )
 

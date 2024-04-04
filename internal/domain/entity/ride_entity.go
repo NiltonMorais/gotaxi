@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/NiltonMorais/gotaxi/internal/domain/entity/vo"
+	"github.com/NiltonMorais/gotaxi/internal/domain/service"
 	"github.com/google/uuid"
 )
 
@@ -12,6 +13,7 @@ const (
 	RideStatusRequested = "requested"
 	RideStatusAccepted  = "accepted"
 	RideStatusStarted   = "started"
+	RideStatusCompleted = "completed"
 )
 
 type RideEntity struct {
@@ -24,6 +26,7 @@ type RideEntity struct {
 	date         time.Time
 	lastPosition *vo.LocationVo
 	distance     float64
+	price        float64
 }
 
 func NewRideEntity(passengerID string, fromLat, fromLng, toLat, toLng float64) (*RideEntity, error) {
@@ -32,10 +35,10 @@ func NewRideEntity(passengerID string, fromLat, fromLng, toLat, toLng float64) (
 		return nil, err
 	}
 
-	return RestoreRideEntity(uuid.String(), passengerID, "", fromLat, fromLng, toLat, toLng, RideStatusRequested, time.Now(), fromLat, fromLng, 0)
+	return RestoreRideEntity(uuid.String(), passengerID, "", fromLat, fromLng, toLat, toLng, RideStatusRequested, time.Now(), fromLat, fromLng, 0, 0)
 }
 
-func RestoreRideEntity(id, passengerID, driverID string, fromLat, fromLng, toLat, toLng float64, status string, date time.Time, lastLat, lastLng, distance float64) (*RideEntity, error) {
+func RestoreRideEntity(id, passengerID, driverID string, fromLat, fromLng, toLat, toLng float64, status string, date time.Time, lastLat, lastLng, distance, price float64) (*RideEntity, error) {
 	fromLocation, err := vo.NewLocation(fromLat, fromLng)
 	if err != nil {
 		return nil, err
@@ -61,6 +64,7 @@ func RestoreRideEntity(id, passengerID, driverID string, fromLat, fromLng, toLat
 		date:         date,
 		lastPosition: lastPosition,
 		distance:     distance,
+		price:        price,
 	}, nil
 }
 
@@ -96,7 +100,21 @@ func (r *RideEntity) UpdatePosition(lat, long float64) error {
 	}
 	r.distance += r.lastPosition.DistanceTo(newLastPosition)
 	r.lastPosition = newLastPosition
+	r.calculatePrice()
 	return nil
+}
+
+func (r *RideEntity) Finish() error {
+	if r.status != RideStatusStarted {
+		return errors.New("ride is not started")
+	}
+	r.status = RideStatusCompleted
+	r.calculatePrice()
+	return nil
+}
+
+func (r *RideEntity) calculatePrice() {
+	r.price = service.NewPriceCalculatorServiceFactory().NewPriceCalculatorService(r.date).Calculate(r.distance)
 }
 
 func (r *RideEntity) GetID() string {
@@ -133,4 +151,20 @@ func (r *RideEntity) GetStatus() string {
 
 func (r *RideEntity) GetDate() time.Time {
 	return r.date
+}
+
+func (r *RideEntity) GetLastLat() float64 {
+	return r.lastPosition.GetLat()
+}
+
+func (r *RideEntity) GetLastLng() float64 {
+	return r.lastPosition.GetLong()
+}
+
+func (r *RideEntity) GetDistance() float64 {
+	return r.distance
+}
+
+func (r *RideEntity) GetPrice() float64 {
+	return r.price
 }
